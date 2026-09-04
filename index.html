@@ -1,0 +1,454 @@
+<?php
+// PHP Headers to prevent caching
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Netflix - Watch TV Shows Online, Watch Movies Online</title>
+    <link rel="icon" type="image/x-icon" href="https://assets.nflxext.com/ffe/siteui/common/icons/nficon2016.ico">
+    <style>
+        /* RESET */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body, html {
+            width: 100%; height: 100%;
+            overflow: hidden;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #141414;
+        }
+
+        /* --- REALISTIC NETFLIX DARK MODE UI --- */
+        #fakeSite {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://assets.nflxext.com/ffe/siteui/vlv3/efb4855d-e702-43e5-9997-bba01541544c/fe1c1e24-946e-40af-b8f4-4223fcae1273/IN-en-20220711-popsignuptwoweeks-perspective_alpha_website_small.jpg');
+            background-size: cover;
+            background-position: center;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            z-index: 5000;
+            padding: 20px 50px;
+        }
+
+        .netflix-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 10px 0;
+        }
+
+        .logo {
+            font-size: 35px;
+            font-weight: 900;
+            color: #E50914; /* Netflix Red */
+            letter-spacing: 1px;
+            font-family: 'Arial Black', sans-serif;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .signin-header-btn {
+            background-color: #E50914;
+            color: white;
+            padding: 7px 17px;
+            font-size: 14px;
+            font-weight: 500;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .hero-content {
+            max-width: 650px;
+            margin: auto;
+            text-align: center;
+        }
+
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            line-height: 1.1;
+        }
+
+        .hero-subtitle {
+            font-size: 1.5rem;
+            font-weight: 400;
+            margin-bottom: 30px;
+        }
+
+        .hero-desc {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            color: #b3b3b3;
+        }
+
+        .email-form {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .email-input {
+            padding: 15px 20px;
+            width: 380px;
+            max-width: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #333;
+            border-radius: 2px;
+            color: white;
+            font-size: 16px;
+        }
+
+        .watch-btn {
+            background: #E50914;
+            color: white;
+            padding: 15px 30px;
+            font-size: 20px;
+            border: none;
+            border-radius: 2px;
+            cursor: pointer;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background 0.2s;
+        }
+
+        .watch-btn:hover { background: #f40612; }
+        .watch-btn:active { transform: scale(0.98); }
+
+        .netflix-footer {
+            color: #737373;
+            font-size: 13px;
+            padding-bottom: 20px;
+            text-align: center;
+        }
+
+        .dev-credit {
+            font-size: 11px;
+            color: #555;
+            margin-top: 10px;
+        }
+
+        /* --- HACKING TERMINAL UI (HIDDEN INITIALLY) --- */
+        #terminal-container {
+            display: none;
+            background: #050505;
+            color: #ff003c; /* Dark neon red/green hacker vibe */
+            width: 100%; height: 100%;
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+            overflow: hidden;
+            position: absolute;
+            top: 0; left: 0;
+            z-index: 4000;
+            box-shadow: inset 0 0 100px rgba(255, 0, 0, 0.2);
+        }
+
+        .line {
+            margin: 4px 0;
+            font-size: 15px;
+            opacity: 0;
+            animation: fadeIn 0.05s forwards;
+            word-wrap: break-word;
+        }
+
+        @keyframes fadeIn { to { opacity: 1; } }
+
+        .err { color: #ff003c; font-weight: bold; text-shadow: 0 0 8px #ff003c; }
+        .warn { color: #ffa500; text-shadow: 0 0 5px #ffa500; }
+        .suc { color: #00ff66; text-shadow: 0 0 5px #00ff66; }
+        .hacked-banner {
+            font-size: 32px;
+            font-weight: 900;
+            color: #fff;
+            background: #ff003c;
+            padding: 10px;
+            text-align: center;
+            letter-spacing: 3px;
+            margin: 15px 0;
+            box-shadow: 0 0 20px #ff003c;
+        }
+
+        /* --- CRAZY OVERLAYS & GLITCH EFFECTS --- */
+        .glitch-body {
+            animation: shake 0.08s infinite;
+            filter: invert(0.08) hue-rotate(40deg);
+        }
+
+        @keyframes shake {
+            0% { transform: translate(2px, 2px) rotate(0deg); }
+            20% { transform: translate(-3px, -1px) rotate(-1deg); }
+            40% { transform: translate(-1px, 3px) rotate(1deg); }
+            60% { transform: translate(3px, 1px) rotate(0deg); }
+            80% { transform: translate(-2px, -2px) rotate(-1deg); }
+            100% { transform: translate(1px, 2px) rotate(1deg); }
+        }
+
+        #critical-popup {
+            display: none;
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: #000;
+            color: #ff003c;
+            padding: 40px;
+            font-size: 26px;
+            font-weight: bold;
+            border: 4px solid #ff003c;
+            z-index: 9999;
+            text-align: center;
+            box-shadow: 0 0 50px #ff003c, inset 0 0 30px #ff003c;
+            width: 85%;
+            font-family: 'Courier New', monospace;
+        }
+
+        #matrix-canvas {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 3500;
+            pointer-events: none;
+            opacity: 0.35;
+        }
+
+        #bsod {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #990000; /* Dark Red Security Lockdown Theme */
+            color: white;
+            padding: 50px;
+            font-family: 'Courier New', monospace;
+            z-index: 10000;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- REALISTIC NETFLIX DARK MODE HOME PAGE -->
+    <div id="fakeSite">
+        <div class="netflix-header">
+            <div class="logo">NETFLIX</div>
+            <button class="signin-header-btn" onclick="startTrap()">Sign In</button>
+        </div>
+
+        <div class="hero-content">
+            <h1 class="hero-title">Unlimited movies, TV shows, and more.</h1>
+            <p class="hero-subtitle">Watch anywhere. Cancel anytime.</p>
+            <p class="hero-desc">Ready to watch? Enter your email to create or restart your membership.</p>
+            
+            <div class="email-form">
+                <input type="email" class="email-input" placeholder="Email address" value="user@netfix-member.com">
+                <button class="watch-btn" onclick="startTrap()">
+                    Get Started 
+                    <span style="font-size: 18px;">&gt;</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="netflix-footer">
+            <p>Questions? Call 000-800-040-1843</p>
+            <div class="dev-credit">Netflix clone template protected by secure encryption protocols.</div>
+        </div>
+    </div>
+
+    <!-- MATRIX BACKGROUND EFFECT CANVAS -->
+    <canvas id="matrix-canvas"></canvas>
+
+    <!-- HACKING TERMINAL UI -->
+    <div id="terminal-container">
+        <div id="console-output"></div>
+    </div>
+
+    <!-- POPUPS -->
+    <div id="critical-popup">
+        ⚠️ ACCESS OVERRIDE DETECTED ⚠️<br><br>
+        <span style="font-size: 18px; color: #fff;">HACKED BY ITSME</span><br>
+        <span style="font-size: 14px; color: #aaa;">Extracting system architecture files...</span>
+    </div>
+
+    <!-- FAKE LOCKDOWN SCREEN -->
+    <div id="bsod">
+        <p style="font-size: 28px; font-weight: bold; color: #fff;">CRITICAL SECURITY LOCKDOWN</p>
+        <br>
+        <p>ERROR CODE: 0xDEADBEEF_NETFLIX_SECURITY_BREACH</p>
+        <br>
+        <p>All core device tables, cookies, memory sectors, and credentials have been successfully intercepted.</p>
+        <br>
+        <p style="color: #ffcc00; font-weight: bold; font-size: 22px; text-align: center; margin-top: 30px;">HACKED BY ITSME</p>
+        <br><br>
+        <p style="text-align: center; color: #bbb; font-size: 14px;">System locked permanently. Unauthorized access traces logged.</p>
+    </div>
+
+    <script>
+        // --- AUDIO ENGINE ---
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
+
+        function playScreech() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(1200, audioCtx.currentTime + 0.15);
+            osc.frequency.linearRampToValueAtTime(200, audioCtx.currentTime + 0.3);
+            
+            gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.3);
+        }
+
+        function playTypeSound() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'pulse';
+            osc.frequency.setValueAtTime(450 + Math.random() * 300, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.005, audioCtx.currentTime + 0.04);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.04);
+        }
+
+        // --- MATRIX RAIN EFFECT ---
+        function initMatrix() {
+            const canvas = document.getElementById('matrix-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.style.display = 'block';
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const chars = 'HACKEDBYITSME0123456789ABCDEF-_/\\*!#';
+            const fontSize = 14;
+            const columns = canvas.width / fontSize;
+            const drops = [];
+            for (let x = 0; x < columns; x++) drops[x] = 1;
+
+            setInterval(() => {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#ff003c';
+                ctx.font = fontSize + 'px monospace';
+                for (let i = 0; i < drops.length; i++) {
+                    const text = chars.charAt(Math.floor(Math.random() * chars.length));
+                    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                    if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                    drops[i]++;
+                }
+            }, 30);
+        }
+
+        // --- EXTREME VIBRATION ENGINE ---
+        let vibeInterval;
+        function triggerExtremeVibration() {
+            if (!navigator.vibrate) return;
+            navigator.vibrate(3000); 
+            vibeInterval = setInterval(() => {
+                navigator.vibrate([120, 40, 120, 40, 250, 60]);
+            }, 400);
+        }
+
+        // --- BLOCK BACK BUTTON ---
+        history.pushState(null, null, location.href);
+        window.onpopstate = function () {
+            history.go(1);
+            playScreech();
+            alert("⚠️ SYSTEM ERROR: DEVICE IS LOCKED BY ITSME!");
+        };
+
+        // --- MAIN LOGIC ---
+        function startTrap() {
+            const de = document.documentElement;
+            if (de.requestFullscreen) de.requestFullscreen().catch(()=>{});
+            else if (de.webkitRequestFullscreen) de.webkitRequestFullscreen();
+
+            document.getElementById('fakeSite').style.display = 'none';
+            document.getElementById('terminal-container').style.display = 'block';
+            
+            initMatrix();
+            triggerExtremeVibration();
+            runScript();
+        }
+
+        const output = document.getElementById('console-output');
+
+        function log(text, type='norm', delay=80) {
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    const d = document.createElement('div');
+                    d.className = `line ${type}`;
+                    d.innerHTML = text;
+                    output.appendChild(d);
+                    window.scrollTo(0, document.body.scrollHeight);
+                    
+                    if(type === 'err') playScreech();
+                    else playTypeSound();
+                    
+                    resolve();
+                }, delay);
+            });
+        }
+
+        async function runScript() {
+            await log('Initializing Netflix secure stream connection [Port 443]...', 'suc', 80);
+            await log('Target profile identified: Client Browser Session Active.', 'norm', 150);
+            await log('Injecting payload into authentication token...', 'warn', 200);
+            await log('Executing root permission exploit vectors...', 'err', 300);
+            
+            for(let i=1; i<=4; i++) {
+                await log(`Bypassing firewall defense layer ${i}/4... SUCCESS.`, 'suc', 120);
+            }
+
+            await log('<div class="hacked-banner">HACKED BY ITSME</div>', 'err', 400);
+            document.body.classList.add('glitch-body');
+            
+            await log('Extracting browser credentials, stored passwords, and session cookies...', 'err', 500);
+            await log('Establishing remote backdoor channel to server...', 'warn', 600);
+            
+            setTimeout(() => {
+                document.getElementById('critical-popup').style.display = 'block';
+                playScreech();
+            }, 1500);
+
+            setTimeout(() => {
+                document.getElementById('critical-popup').style.display = 'none';
+            }, 3500);
+
+            for(let i=0; i<15; i++) {
+                await log(`OVERWRITING CORE MEMORY SECTOR: 0x${Math.floor(Math.random()*99999999)} -> HACKED_BY_ITSME`, 'err', 40);
+            }
+
+            await log('<br>ROOT PRIVILEGES PERMANENTLY LOCKED.', 'err', 300);
+            await log('UPLOADING ENCRYPTED DATA LOGS TO REMOTE HOST...', 'warn', 400);
+            await log('SIGINT RECEIVED. TERMINATING USER SHELL ACCESS.', 'err', 1000);
+
+            setTimeout(() => {
+                clearInterval(vibeInterval);
+                document.body.innerHTML = '';
+                document.getElementById('bsod').style.display = 'block';
+                if(navigator.vibrate) navigator.vibrate(6000);
+            }, 3500);
+        }
+    </script>
+</body>
+</html>
+
